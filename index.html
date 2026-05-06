@@ -1,0 +1,2313 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>陈樊 - AI产品经理</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=Noto+Sans+SC:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  
+  <!-- Firebase SDK (compat版本 - 使用script标签引入) -->
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+  
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  
+  <!-- React -->
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            dark: { DEFAULT: '#09090b', light: '#18181b', border: '#27272a', card: '#1c1c1e' },
+            accent: { DEFAULT: '#f59e0b', hover: '#d97706', muted: 'rgba(245,158,11,0.12)' },
+            text: { primary: '#fafafa', secondary: '#a1a1aa', muted: '#71717a' },
+            surface: { DEFAULT: '#0a0a0a', elevated: '#141414' }
+          },
+          fontFamily: {
+            sans: ['Noto Sans SC', 'DM Sans', 'system-ui', 'sans-serif'],
+            display: ['DM Sans', 'Noto Sans SC', 'sans-serif']
+          },
+          maxWidth: { content: '960px' },
+          borderRadius: { '2xl': '16px', '3xl': '24px' },
+          boxShadow: {
+            'glow': '0 0 40px rgba(245,158,11,0.15)',
+            'card': '0 4px 24px rgba(0,0,0,0.4)',
+            'elevated': '0 8px 32px rgba(0,0,0,0.5)'
+          }
+        }
+      }
+    }
+  </script>
+  
+  <style>
+    * { scrollbar-width: thin; scrollbar-color: #27272a #09090b; }
+    *::-webkit-scrollbar { width: 6px; height: 6px; }
+    *::-webkit-scrollbar-track { background: #09090b; }
+    *::-webkit-scrollbar-thumb { background: #27272a; border-radius: 3px; }
+    html { scroll-behavior: smooth; }
+    body { 
+      background: #09090b; 
+      color: #fafafa; 
+      font-family: 'Noto Sans SC', 'DM Sans', system-ui, sans-serif; 
+      -webkit-font-smoothing: antialiased;
+    }
+    
+    /* 玻璃态效果 */
+    .glass { 
+      background: rgba(24,24,27,0.85); 
+      backdrop-filter: blur(20px); 
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid rgba(39,39,42,0.6); 
+    }
+    
+    /* 卡片悬停效果 */
+    .card-hover { 
+      transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1); 
+    }
+    .card-hover:hover { 
+      transform: translateY(-6px); 
+      box-shadow: 0 20px 40px rgba(0,0,0,0.5), 0 0 60px rgba(245,158,11,0.08); 
+    }
+    
+    /* 渐变文字 */
+    .gradient-text { 
+      background: linear-gradient(135deg, #f59e0b 0%, #fbbf24 50%, #f59e0b 100%); 
+      -webkit-background-clip: text; 
+      -webkit-text-fill-color: transparent; 
+      background-clip: text; 
+    }
+    
+    /* 打字机效果 */
+    .typing-cursor { 
+      display: inline-block; 
+      width: 2px; 
+      height: 1.2em; 
+      background: #f59e0b; 
+      margin-left: 2px; 
+      animation: blink 1s step-end infinite; 
+    }
+    @keyframes blink { 
+      50% { opacity: 0; } 
+    }
+    
+    /* 滚动渐显动画 */
+    .reveal { 
+      opacity: 0; 
+      transform: translateY(40px); 
+      transition: all 0.8s cubic-bezier(0.4, 0, 0.2, 1); 
+    }
+    .reveal.visible { 
+      opacity: 1; 
+      transform: translateY(0); 
+    }
+    
+    /* 时间轴 */
+    .timeline-dot { 
+      width: 14px; 
+      height: 14px; 
+      background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); 
+      border-radius: 50%; 
+      box-shadow: 0 0 20px rgba(245,158,11,0.5); 
+    }
+    .timeline-line { 
+      position: absolute; 
+      left: 50%; 
+      top: 24px; 
+      bottom: 0; 
+      width: 1px; 
+      background: linear-gradient(to bottom, #f59e0b, rgba(245,158,11,0.1)); 
+      transform: translateX(-50%); 
+    }
+    
+    /* Markdown 内容样式 */
+    .prose-custom h1 { font-size: 1.5rem; font-weight: 700; margin: 1.5rem 0 1rem; }
+    .prose-custom h2 { font-size: 1.25rem; font-weight: 600; margin: 1.25rem 0 0.75rem; }
+    .prose-custom h3 { font-size: 1.1rem; font-weight: 500; margin: 1rem 0 0.5rem; }
+    .prose-custom p { margin: 0.75rem 0; line-height: 1.8; }
+    .prose-custom ul, .prose-custom ol { margin: 0.75rem 0; padding-left: 1.5rem; }
+    .prose-custom li { margin: 0.375rem 0; }
+    .prose-custom code { background: #18181b; padding: 0.125rem 0.375rem; border-radius: 4px; font-size: 0.875em; }
+    .prose-custom pre { background: #18181b; padding: 1rem; border-radius: 12px; overflow-x: auto; margin: 1rem 0; }
+    .prose-custom blockquote { border-left: 3px solid #f59e0b; padding-left: 1rem; margin: 1rem 0; color: #a1a1aa; font-style: italic; }
+    .prose-custom img { max-width: 100%; border-radius: 12px; margin: 1rem 0; }
+    .prose-custom a { color: #f59e0b; text-decoration: underline; }
+    .prose-custom strong { color: #fafafa; font-weight: 600; }
+    
+    /* 骨架屏动画 */
+    @keyframes shimmer {
+      0% { background-position: -200% 0; }
+      100% { background-position: 200% 0; }
+    }
+    .skeleton {
+      background: linear-gradient(90deg, #18181b 25%, #27272a 50%, #18181b 75%);
+      background-size: 200% 100%;
+      animation: shimmer 1.5s infinite;
+      border-radius: 8px;
+    }
+    
+    /* 按钮样式 */
+    .btn-primary {
+      background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+      color: #09090b;
+      font-weight: 600;
+      transition: all 0.25s ease;
+    }
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 24px rgba(245,158,11,0.35);
+    }
+    .btn-primary:active { transform: translateY(0); }
+    
+    .btn-secondary {
+      background: #27272a;
+      color: #fafafa;
+      transition: all 0.25s ease;
+    }
+    .btn-secondary:hover { background: #3f3f46; }
+    
+    /* 输入框样式 */
+    input, textarea, select {
+      background: #18181b !important;
+      border: 1px solid #27272a !important;
+      color: #fafafa !important;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    input:focus, textarea:focus, select:focus { 
+      border-color: #f59e0b !important; 
+      box-shadow: 0 0 0 3px rgba(245,158,11,0.1) !important;
+      outline: none !important;
+    }
+    
+    /* 模态框 */
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.8);
+      backdrop-filter: blur(8px);
+      z-index: 100;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    
+    /* 标签样式 */
+    .tag { 
+      display: inline-flex; 
+      align-items: center; 
+      padding: 0.25rem 0.75rem; 
+      background: rgba(245,158,11,0.1); 
+      color: #f59e0b; 
+      border-radius: 9999px; 
+      font-size: 0.75rem; 
+      font-weight: 500;
+      border: 1px solid rgba(245,158,11,0.2);
+    }
+    .tag-muted {
+      background: #18181b;
+      color: #a1a1aa;
+      border-color: #27272a;
+    }
+    
+    /* 打印样式 */
+    @media print {
+      body { background: white; color: black; }
+      nav, footer, .no-print { display: none !important; }
+      .print-only { display: block !important; }
+    }
+    .print-only { display: none; }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+  
+  <script type="text/babel">
+    // ==================== Firebase 初始化 ====================
+    const firebaseConfig = {
+      apiKey: "AIzaSyCyxuZ4e6bn5DEygJA4pshAqwqtumPoJMA",
+      authDomain: "personal-brand-site-5efc5.firebaseapp.com",
+      projectId: "personal-brand-site-5efc5",
+      storageBucket: "personal-brand-site-5efc5.firebasestorage.app",
+      messagingSenderId: "193684905095",
+      appId: "1:193684905095:web:2fb1a9bcc25915ef4d6c22",
+      measurementId: "G-FCQETV909S"
+    };
+    
+    // 初始化 Firebase
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+    const auth = firebase.auth();
+    
+    // ==================== 初始数据（用于首次初始化） ====================
+    const INITIAL_DATA = {
+      profile: {
+        id: "main",
+        name: "陈樊",
+        title: "AI产品经理",
+        tagline: "用产品思维解构复杂系统",
+        avatar: "",
+        bio: {
+          now: "正在转型AI产品经理，制定了40天求职计划。擅长将AI技术与用户需求结合，创造有价值的产品体验。",
+          past: "曾从事产品运营与需求分析工作，积累了丰富的用户研究经验，深入理解B端与C端产品差异。",
+          future: "希望加入AI领域的创业公司或大厂AI产品团队，参与改变行业的产品建设。"
+        },
+        socials: [
+          { platform: "github", url: "https://github.com/chenfan", icon: "Github" },
+          { platform: "linkedin", url: "https://linkedin.com/in/chenfan", icon: "Linkedin" },
+          { platform: "email", url: "mailto:chenfan@example.com", icon: "Mail" }
+        ]
+      },
+      skills: ["AI产品设计", "需求分析", "数据驱动", "用户研究", "AIGC应用", "技术理解力", "产品规划", "跨部门协作"],
+      config: {
+        id: "main",
+        theme: "dark",
+        heroText: "AI产品经理 · 用产品思维解构复杂系统",
+        modules: { about: true, experience: true, portfolio: true, journal: true, insights: true, contact: true }
+      }
+    };
+
+    const INITIAL_EXPERIENCES = [
+      { id: "exp1", company: "XX科技公司", role: "产品经理", period: "2022 - 2024", achievements: ["负责B端SaaS产品规划与迭代", "主导数据中台产品设计", "提升产品活跃度40%"], description: "负责企业级SaaS产品的全生命周期管理，深入业务场景，输出产品方案并推动落地。" },
+      { id: "exp2", company: "YY互联网", role: "产品运营", period: "2020 - 2022", achievements: ["用户增长策略制定", "活动运营GMV提升25%", "搭建用户分层运营体系"], description: "负责用户增长与留存运营，通过数据驱动优化运营策略，提升用户生命周期价值。" }
+    ];
+
+    const INITIAL_PORTFOLIOS = [
+      { id: "port1", title: "AI产品经理求职指南", category: "article", tags: ["求职", "AI产品", "转型指南"], cover: "", summary: "完整记录我从传统产品转型AI产品的40天求职计划，包含简历优化、面试准备、作品集准备等实战经验。", content: "## 背景\n\n我是陈樊，曾从事2年产品运营工作，2024年决定转型AI产品经理。\n\n## 求职计划\n\n### 第一阶段：认知建立（第1-10天）\n- 学习AI基础知识\n- 研究AI产品经理能力模型\n- 分析目标公司JD\n\n### 第二阶段：技能补充（第11-25天）\n- 学习机器学习基础\n- 研究AI产品案例\n- 输出AI产品分析报告\n\n### 第三阶段：面试冲刺（第26-40天）\n- 准备STAR法则案例\n- 模拟面试练习\n- 持续优化简历\n\n## 核心心得\n\n> AI产品经理的核心竞争力在于：理解AI能力边界 + 挖掘真实用户需求\n\n更多内容持续更新中...", featured: true, date: "2024-03-15" },
+      { id: "port2", title: "AI行业热点分析：大模型应用落地", category: "analysis", tags: ["大模型", "行业分析", "应用场景"], cover: "", summary: "深度分析2024年AI大模型在各行业的应用落地情况，探讨商业化机会与挑战。", content: "## 摘要\n\n2024年被视为AI大模型应用落地元年，本文分析主要应用场景与商业模式。\n\n## 主要发现\n\n1. **生产力工具**成为最先规模化的场景\n2. **垂直行业SaaS**正在快速集成AI能力\n3. **C端应用**仍处于探索阶段\n\n## 商业化挑战\n\n- 算力成本高企\n- 应用场景碎片化\n- 用户付费意愿待培育\n\n## 结论\n\nAI产品经理的机会在于找到技术与需求的最佳结合点。", featured: false, date: "2024-03-10" },
+      { id: "port3", title: "智能客服产品设计方案", category: "project", tags: ["智能客服", "NLP", "B端产品"], cover: "", summary: "完整的产品设计方案，包括需求分析、功能规划、技术方案对接全流程。", content: "## 项目背景\n\n为某电商平台设计智能客服系统，目标提升客服效率50%。\n\n## 功能规划\n\n1. 意图识别模块\n2. 知识库管理后台\n3. 人机协作流程\n4. 数据分析看板\n\n## 核心创新\n\n采用多轮对话管理+意图预判机制，提升用户体验。", featured: true, date: "2024-03-05" }
+    ];
+
+    const INITIAL_JOURNALS = [
+      { id: "j1", content: "今天完成了AI产品经理能力模型的学习，总结了一些核心知识点，准备整理成文。感觉转型之路虽然挑战重重，但每一步都在靠近目标。💪", tags: ["日常", "学习"], images: [], date: "2024-03-18", pinned: true },
+      { id: "j2", content: "面试了一家AI创业公司，面试官问了很多关于大模型能力边界的问题。回来后整理了答案，发现自己对LLM的理解还不够深入，需要加强学习。\n\n核心感悟：AI产品经理不仅要懂产品，更要懂AI。", tags: ["面试", "反思"], images: [], date: "2024-03-16", pinned: false },
+      { id: "j3", content: "终于完成了个人品牌网站的上线！这是一个用纯前端技术打造的网站，支持后台管理和实时更新。技术选型：React + Tailwind CSS + Firebase Firestore。\n\n下一步计划：继续完善作品集，添加更多AI产品分析案例。", tags: ["产品", "技术"], images: [], date: "2024-03-14", pinned: false }
+    ];
+
+    const INITIAL_INSIGHTS = [
+      { id: "ins1", title: "AI产品经理面试高频问题", tags: ["面试", "技巧"], content: "## 常见问题分类\n\n### 产品能力\n- 介绍你做过的最成功的产品\n- 如何判断一个需求该不该做\n- 产品优先级如何排序\n\n### AI认知\n- 你对AIGC的理解\n- AI产品的核心指标设计\n- 如何评估AI产品效果\n\n### 技术理解\n- 你对大模型能力的理解\n- Prompt工程的基础原则\n- 如何与AI研发团队协作", date: "2024-03-17" },
+      { id: "ins2", title: "从0到1搭建AI产品的方法论", tags: ["方法论", "AI产品"], content: "## 五步法\n\n1. **明确问题** - AI能解决什么？\n2. **边界评估** - 技术成熟度如何？\n3. **MVP验证** - 最小成本试错\n4. **迭代优化** - 数据驱动改进\n5. **规模复制** - 商业模式验证", date: "2024-03-12" }
+    ];
+
+    // ==================== 工具函数 ====================
+    const { useState, useEffect, useRef, createContext, useContext, useCallback } = React;
+
+    // 图标组件
+    const Icons = {
+      Github: () => <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>,
+      Linkedin: () => <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg>,
+      Mail: () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>,
+      Menu: () => <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>,
+      X: () => <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>,
+      Plus: () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>,
+      Edit: () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>,
+      Trash: () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>,
+      Pin: () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>,
+      Download: () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>,
+      Sun: () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>,
+      Moon: () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>,
+      Upload: () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>,
+      ExternalLink: () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>,
+      ChevronLeft: () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="15 18 9 12 15 6"/></svg>,
+      Settings: () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>,
+      Briefcase: () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>,
+      FileText: () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>,
+      BookOpen: () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>,
+      Send: () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>,
+      Calendar: () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>,
+      ArrowLeft: () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>,
+      Star: () => <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>,
+      Image: () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>,
+      Check: () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="20 6 9 17 4 12"/></svg>,
+      Eye: () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>,
+      LogOut: () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>,
+      Hash: () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="4" y1="9" x2="20" y2="9"/><line x1="4" y1="15" x2="20" y2="15"/><line x1="10" y1="3" x2="8" y2="21"/><line x1="16" y1="3" x2="14" y2="21"/></svg>,
+      Loader: () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="animate-spin"><circle cx="12" cy="12" r="10" strokeOpacity="0.25"/><path d="M12 2a10 10 0 0 1 10 10" strokeOpacity="1"/></svg>,
+    };
+
+    // 工具函数
+    const parseMarkdown = (text) => {
+      if (!text) return '';
+      return text
+        .replace(/^### (.*$)/gim, '<h3>$1</h3>')
+        .replace(/^## (.*$)/gim, '<h2>$1</h2>')
+        .replace(/^# (.*$)/gim, '<h1>$1</h1>')
+        .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+        .replace(/\*(.*?)\*/g, '<em>$1</em>')
+        .replace(/`([^`]+)`/g, '<code>$1</code>')
+        .replace(/```([\s\S]*?)```/g, '<pre><code>$1</code></pre>')
+        .replace(/^\> (.*$)/gim, '<blockquote>$1</blockquote>')
+        .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank">$1</a>')
+        .replace(/!\[([^\]]*)\]\(([^)]+)\)/g, '<img src="$2" alt="$1"/>')
+        .replace(/\n\n/g, '</p><p>')
+        .replace(/\n/g, '<br/>');
+    };
+
+    const formatDate = (dateStr) => {
+      const date = new Date(dateStr);
+      return date.toLocaleDateString('zh-CN', { year: 'numeric', month: 'long', day: 'numeric' });
+    };
+
+    const generateId = () => Date.now().toString(36) + Math.random().toString(36).substr(2);
+
+    // ==================== 上下文 ====================
+    const AppContext = createContext();
+
+    const AppProvider = ({ children }) => {
+      const [data, setData] = useState({
+        profile: null,
+        skills: [],
+        config: null,
+        experiences: [],
+        portfolios: [],
+        journals: [],
+        insights: []
+      });
+      const [loading, setLoading] = useState(true);
+      const [user, setUser] = useState(null);
+      const [unsubscribes, setUnsubscribes] = useState([]);
+
+      // 初始化数据并监听
+      useEffect(() => {
+        const initAndListen = async () => {
+          setLoading(true);
+          
+          // 检查是否需要初始化数据
+          const profileSnap = await db.collection('profile').doc('main').get();
+          if (!profileSnap.exists) {
+            // 首次使用，初始化数据
+            await db.collection('profile').doc('main').set(INITIAL_DATA.profile);
+            await db.collection('config').doc('main').set(INITIAL_DATA.config);
+            
+            const batch = db.batch();
+            INITIAL_EXPERIENCES.forEach(exp => {
+              batch.set(db.collection('experiences').doc(exp.id), exp);
+            });
+            INITIAL_PORTFOLIOS.forEach(port => {
+              batch.set(db.collection('portfolios').doc(port.id), port);
+            });
+            INITIAL_JOURNALS.forEach(j => {
+              batch.set(db.collection('journals').doc(j.id), j);
+            });
+            INITIAL_INSIGHTS.forEach(ins => {
+              batch.set(db.collection('insights').doc(ins.id), ins);
+            });
+            await batch.commit();
+          }
+
+          // 设置实时监听
+          const unsubs = [];
+          
+          // profile
+          const profileUnsub = db.collection('profile').doc('main').onSnapshot(doc => {
+            if (doc.exists) {
+              setData(prev => ({ ...prev, profile: doc.data() }));
+            }
+          });
+          unsubs.push(profileUnsub);
+          
+          // config
+          const configUnsub = db.collection('config').doc('main').onSnapshot(doc => {
+            if (doc.exists) {
+              setData(prev => ({ ...prev, config: doc.data() }));
+            }
+          });
+          unsubs.push(configUnsub);
+          
+          // experiences
+          const expUnsub = db.collection('experiences').orderBy('__name__').onSnapshot(snap => {
+            const exps = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+            setData(prev => ({ ...prev, experiences: exps }));
+          });
+          unsubs.push(expUnsub);
+          
+          // portfolios
+          const portUnsub = db.collection('portfolios').orderBy('date', 'desc').onSnapshot(snap => {
+            const ports = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+            setData(prev => ({ ...prev, portfolios: ports }));
+          });
+          unsubs.push(portUnsub);
+          
+          // journals
+          const journalUnsub = db.collection('journals').orderBy('date', 'desc').onSnapshot(snap => {
+            const journals = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+            setData(prev => ({ ...prev, journals }));
+          });
+          unsubs.push(journalUnsub);
+          
+          // insights
+          const insightUnsub = db.collection('insights').orderBy('date', 'desc').onSnapshot(snap => {
+            const insights = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+            setData(prev => ({ ...prev, insights }));
+          });
+          unsubs.push(insightUnsub);
+          
+          // skills 作为config的一部分
+          const skillsUnsub = db.collection('config').doc('main').onSnapshot(doc => {
+            if (doc.exists && doc.data().skills) {
+              setData(prev => ({ ...prev, skills: doc.data().skills || [] }));
+            }
+          });
+          unsubs.push(skillsUnsub);
+          
+          setUnsubscribes(unsubs);
+          setLoading(false);
+        };
+
+        initAndListen();
+        
+        // Auth 状态监听
+        const authUnsub = auth.onAuthStateChanged(setUser);
+        
+        return () => {
+          unsubs.forEach(unsub => unsub());
+          authUnsub();
+        };
+      }, []);
+
+      // Firebase 操作函数
+      const addDocument = async (collection, data) => {
+        const id = generateId();
+        await db.collection(collection).doc(id).set({ ...data, id });
+        return id;
+      };
+
+      const updateDocument = async (collection, id, data) => {
+        await db.collection(collection).doc(id).update(data);
+      };
+
+      const deleteDocument = async (collection, id) => {
+        await db.collection(collection).doc(id).delete();
+      };
+
+      const login = async (email, password) => {
+        return auth.signInWithEmailAndPassword(email, password);
+      };
+
+      const logout = async () => {
+        return auth.signOut();
+      };
+
+      // 生成可分享HTML（将当前Firestore数据快照嵌入）
+      const generateShareableHTML = useCallback(async () => {
+        const snapshot = await db.collection('config').doc('main').get();
+        const configData = snapshot.data() || {};
+        
+        const html = document.documentElement.outerHTML;
+        const dataScript = `
+          window.__EMBEDDED_DATA__ = {
+            profile: ${JSON.stringify(data.profile)},
+            skills: ${JSON.stringify(data.skills)},
+            config: ${JSON.stringify(configData)},
+            experiences: ${JSON.stringify(data.experiences)},
+            portfolios: ${JSON.stringify(data.portfolios)},
+            journals: ${JSON.stringify(data.journals)},
+            insights: ${JSON.stringify(data.insights)}
+          };
+        `;
+        return html.replace('</body>', `<script>${dataScript}<\/script></body>`);
+      }, [data]);
+
+      return (
+        <AppContext.Provider value={{ 
+          data, loading, user, 
+          addDocument, updateDocument, deleteDocument,
+          login, logout,
+          generateShareableHTML 
+        }}>
+          {children}
+        </AppContext.Provider>
+      );
+    };
+
+    const useApp = () => useContext(AppContext);
+
+    // ==================== 骨架屏组件 ====================
+    const Skeleton = ({ className }) => <div className={`skeleton ${className}`} />;
+
+    const LoadingSkeleton = () => (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-16 h-16 mx-auto mb-4 rounded-full skeleton"></div>
+          <div className="h-6 w-48 mx-auto mb-2 skeleton"></div>
+          <div className="h-4 w-32 mx-auto skeleton"></div>
+        </div>
+      </div>
+    );
+
+    // ==================== 前台组件 ====================
+    const Navigation = () => {
+      const { data } = useApp();
+      const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+      const [scrolled, setScrolled] = useState(false);
+
+      useEffect(() => {
+        const handleScroll = () => setScrolled(window.scrollY > 50);
+        window.addEventListener('scroll', handleScroll);
+        return () => window.removeEventListener('scroll', handleScroll);
+      }, []);
+
+      const navItems = [
+        { id: 'about', label: '关于' },
+        { id: 'experience', label: '经历' },
+        { id: 'portfolio', label: '作品' },
+        { id: 'journal', label: '随笔' },
+        { id: 'insights', label: '观点' },
+        { id: 'contact', label: '联系' },
+      ];
+
+      return (
+        <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${scrolled ? 'glass py-3' : 'py-5'}`}>
+          <div className="max-w-content mx-auto px-6 flex items-center justify-between">
+            <button 
+              onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+              className="font-display text-xl font-semibold tracking-tight hover:text-accent transition-colors"
+            >
+              {data.profile?.name || '加载中...'}
+            </button>
+            
+            <div className="hidden md:flex items-center gap-8">
+              {navItems.map(item => (
+                <a 
+                  key={item.id}
+                  href={`#${item.id}`}
+                  className="text-sm text-text-secondary hover:text-accent transition-colors"
+                >
+                  {item.label}
+                </a>
+              ))}
+              <a 
+                href="/admin"
+                className="text-text-muted hover:text-accent transition-colors p-2"
+                title="管理后台"
+              >
+                <Icons.Settings />
+              </a>
+            </div>
+
+            <button 
+              className="md:hidden text-text-secondary"
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            >
+              {mobileMenuOpen ? <Icons.X /> : <Icons.Menu />}
+            </button>
+          </div>
+
+          {mobileMenuOpen && (
+            <div className="md:hidden glass mt-2 mx-4 rounded-2xl p-4">
+              {navItems.map(item => (
+                <a 
+                  key={item.id}
+                  href={`#${item.id}`}
+                  className="block py-3 text-sm text-text-secondary hover:text-accent transition-colors"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  {item.label}
+                </a>
+              ))}
+              <a href="/admin" className="block py-3 text-sm text-text-muted hover:text-accent transition-colors">
+                管理后台
+              </a>
+            </div>
+          )}
+        </nav>
+      );
+    };
+
+    const HeroSection = () => {
+      const { data } = useApp();
+      const [displayText, setDisplayText] = useState('');
+      const fullText = data.config?.heroText || INITIAL_DATA.config.heroText;
+
+      useEffect(() => {
+        let index = 0;
+        const timer = setInterval(() => {
+          if (index <= fullText.length) {
+            setDisplayText(fullText.slice(0, index));
+            index++;
+          } else {
+            clearInterval(timer);
+          }
+        }, 60);
+        return () => clearInterval(timer);
+      }, [fullText]);
+
+      if (!data.profile) return null;
+
+      return (
+        <section className="min-h-screen flex items-center justify-center px-6 pt-20">
+          <div className="max-w-content mx-auto text-center">
+            <div className="mb-8">
+              {data.profile.avatar ? (
+                <img 
+                  src={data.profile.avatar} 
+                  alt={data.profile.name}
+                  className="w-28 h-28 mx-auto rounded-full object-cover border-2 border-accent/30 shadow-glow"
+                />
+              ) : (
+                <div className="w-28 h-28 mx-auto rounded-full bg-gradient-to-br from-accent to-amber-600 flex items-center justify-center text-4xl font-display font-bold text-dark shadow-glow">
+                  {data.profile.name.slice(0, 1)}
+                </div>
+              )}
+            </div>
+            
+            <h1 className="font-display text-5xl md:text-7xl font-bold mb-6 tracking-tight">
+              {data.profile.name}
+            </h1>
+            
+            <div className="h-8 mb-10">
+              <p className="text-xl md:text-2xl text-text-secondary">
+                {displayText}<span className="typing-cursor"></span>
+              </p>
+            </div>
+            
+            <div className="flex items-center justify-center gap-6">
+              {data.profile.socials?.map((social, i) => (
+                <a
+                  key={i}
+                  href={social.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-text-muted hover:text-accent transition-all p-3 rounded-xl hover:bg-accent-muted"
+                  title={social.platform}
+                >
+                  {social.icon === 'Github' && <Icons.Github />}
+                  {social.icon === 'Linkedin' && <Icons.Linkedin />}
+                  {social.icon === 'Mail' && <Icons.Mail />}
+                </a>
+              ))}
+            </div>
+            
+            <div className="mt-20 animate-pulse">
+              <a 
+                href="#about"
+                className="inline-flex flex-col items-center text-text-muted hover:text-accent transition-colors"
+              >
+                <span className="text-xs mb-3 tracking-widest uppercase">Scroll</span>
+                <div className="w-5 h-8 border border-current rounded-full flex justify-center pt-1">
+                  <div className="w-1 h-2 bg-current rounded-full animate-bounce"></div>
+                </div>
+              </a>
+            </div>
+          </div>
+        </section>
+      );
+    };
+
+    // 滚动显示 Hook
+    const useReveal = () => {
+      const ref = useRef(null);
+      useEffect(() => {
+        const observer = new IntersectionObserver(
+          ([entry]) => entry.isIntersecting && ref.current?.classList.add('visible'),
+          { threshold: 0.1 }
+        );
+        if (ref.current) observer.observe(ref.current);
+        return () => observer.disconnect();
+      }, []);
+      return ref;
+    };
+
+    const AboutSection = () => {
+      const { data } = useApp();
+      const sectionRef = useReveal();
+      const skillsRef = useReveal();
+
+      if (!data.profile) return null;
+
+      return (
+        <section id="about" ref={sectionRef} className="reveal py-32 px-6">
+          <div className="max-w-content mx-auto">
+            <div className="flex items-center gap-4 mb-12">
+              <span className="text-accent font-mono text-sm">01</span>
+              <h2 className="font-display text-3xl md:text-4xl font-bold">关于我</h2>
+            </div>
+            
+            <div className="grid md:grid-cols-[220px_1fr] gap-12">
+              <div className="text-center md:text-left">
+                <div className="w-44 h-44 mx-auto md:mx-0 rounded-3xl overflow-hidden bg-gradient-to-br from-accent/20 to-amber-600/10 flex items-center justify-center mb-6">
+                  {data.profile.avatar ? (
+                    <img src={data.profile.avatar} alt="" className="w-full h-full object-cover" />
+                  ) : (
+                    <span className="text-6xl font-display font-bold text-accent/50">{data.profile.name.slice(0, 1)}</span>
+                  )}
+                </div>
+                
+                <div ref={skillsRef} className="reveal flex flex-wrap gap-2 justify-center md:justify-start">
+                  {(data.skills || []).slice(0, 6).map((skill, i) => (
+                    <span key={i} className="tag">{skill}</span>
+                  ))}
+                </div>
+              </div>
+              
+              <div className="space-y-6">
+                <div className="p-8 rounded-3xl bg-dark-light border border-dark-border card-hover">
+                  <div className="flex items-center gap-3 mb-4">
+                    <span className="w-2 h-2 rounded-full bg-accent"></span>
+                    <h3 className="text-accent font-semibold">现在</h3>
+                  </div>
+                  <p className="text-text-secondary leading-relaxed">{data.profile.bio?.now}</p>
+                </div>
+                
+                <div className="p-8 rounded-3xl bg-dark-light border border-dark-border card-hover">
+                  <div className="flex items-center gap-3 mb-4">
+                    <span className="w-2 h-2 rounded-full bg-text-muted"></span>
+                    <h3 className="text-text-muted font-semibold">过去</h3>
+                  </div>
+                  <p className="text-text-secondary leading-relaxed">{data.profile.bio?.past}</p>
+                </div>
+                
+                <div className="p-8 rounded-3xl bg-dark-light border border-dark-border card-hover">
+                  <div className="flex items-center gap-3 mb-4">
+                    <span className="w-2 h-2 rounded-full bg-text-muted"></span>
+                    <h3 className="text-text-muted font-semibold">未来方向</h3>
+                  </div>
+                  <p className="text-text-secondary leading-relaxed">{data.profile.bio?.future}</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+      );
+    };
+
+    const ExperienceSection = () => {
+      const { data } = useApp();
+      const sectionRef = useReveal();
+
+      if (!data.experiences?.length) return null;
+
+      return (
+        <section id="experience" ref={sectionRef} className="reveal py-32 px-6 bg-dark-light/50">
+          <div className="max-w-content mx-auto">
+            <div className="flex items-center gap-4 mb-12">
+              <span className="text-accent font-mono text-sm">02</span>
+              <h2 className="font-display text-3xl md:text-4xl font-bold">工作经历</h2>
+            </div>
+            
+            <div className="relative pl-8 md:pl-0">
+              {data.experiences.map((exp, index) => (
+                <div key={exp.id} className="relative pb-12 last:pb-0">
+                  <div className="hidden md:block absolute left-1/2 -translate-x-1/2 timeline-dot top-6"></div>
+                  <div className="hidden md:block absolute left-1/2 -translate-x-1/2 w-px h-full bg-gradient-to-b from-accent to-transparent top-12"></div>
+                  
+                  <div className={`md:w-[calc(50%-40px)] ${index % 2 === 0 ? 'md:mr-auto' : 'md:ml-auto'}`}>
+                    <div className="p-8 rounded-3xl bg-dark border border-dark-border card-hover">
+                      <div className="flex items-center gap-3 mb-4">
+                        <span className="text-xs text-text-muted font-mono">{exp.period}</span>
+                      </div>
+                      <h3 className="text-xl font-semibold mb-1">{exp.role}</h3>
+                      <p className="text-accent mb-4">{exp.company}</p>
+                      <p className="text-text-secondary text-sm mb-4 leading-relaxed">{exp.description}</p>
+                      <div className="flex flex-wrap gap-2">
+                        {(exp.achievements || []).map((a, i) => (
+                          <span key={i} className="text-xs px-3 py-1 bg-accent-muted text-accent rounded-full">
+                            {a}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+      );
+    };
+
+    const PortfolioSection = () => {
+      const { data } = useApp();
+      const [filter, setFilter] = useState('all');
+      const [selectedItem, setSelectedItem] = useState(null);
+      const sectionRef = useReveal();
+
+      if (!data.portfolios?.length) return null;
+
+      const categories = [
+        { id: 'all', label: '全部' },
+        { id: 'project', label: '项目' },
+        { id: 'article', label: '文章' },
+        { id: 'analysis', label: '分析报告' },
+        { id: 'case', label: '案例' },
+      ];
+
+      const filteredItems = filter === 'all' 
+        ? data.portfolios 
+        : data.portfolios.filter(item => item.category === filter);
+
+      const categoryIcons = { project: '📦', article: '📝', analysis: '📊', case: '💡' };
+
+      return (
+        <section id="portfolio" ref={sectionRef} className="reveal py-32 px-6">
+          <div className="max-w-content mx-auto">
+            <div className="flex items-center gap-4 mb-4">
+              <span className="text-accent font-mono text-sm">03</span>
+              <h2 className="font-display text-3xl md:text-4xl font-bold">作品集</h2>
+            </div>
+            <p className="text-text-secondary mb-10">AI产品实战案例与分析</p>
+            
+            <div className="flex flex-wrap gap-3 mb-12">
+              {categories.map(cat => (
+                <button
+                  key={cat.id}
+                  onClick={() => setFilter(cat.id)}
+                  className={`px-5 py-2 text-sm rounded-full transition-all ${
+                    filter === cat.id 
+                      ? 'bg-accent text-dark font-semibold' 
+                      : 'bg-dark-light text-text-secondary hover:text-text-primary border border-dark-border'
+                  }`}
+                >
+                  {cat.label}
+                </button>
+              ))}
+            </div>
+
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {filteredItems.map((item, index) => (
+                <article
+                  key={item.id}
+                  className="group cursor-pointer card-hover"
+                  onClick={() => setSelectedItem(item)}
+                >
+                  <div className="rounded-3xl overflow-hidden bg-dark-light border border-dark-border">
+                    <div className="aspect-[4/3] relative overflow-hidden">
+                      {item.cover ? (
+                        <img src={item.cover} alt={item.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                      ) : (
+                        <div className="w-full h-full bg-gradient-to-br from-accent/10 to-amber-600/5 flex items-center justify-center">
+                          <span className="text-5xl opacity-30">{categoryIcons[item.category] || '📄'}</span>
+                        </div>
+                      )}
+                      {item.featured && (
+                        <div className="absolute top-4 right-4 bg-accent text-dark text-xs px-3 py-1 rounded-full font-semibold flex items-center gap-1">
+                          <Icons.Star /> 推荐
+                        </div>
+                      )}
+                    </div>
+                    <div className="p-6">
+                      <div className="flex flex-wrap gap-2 mb-3">
+                        {(item.tags || []).slice(0, 3).map((tag, i) => (
+                          <span key={i} className="text-xs text-text-muted">{tag}</span>
+                        ))}
+                      </div>
+                      <h3 className="font-semibold text-lg mb-2 group-hover:text-accent transition-colors">
+                        {item.title}
+                      </h3>
+                      <p className="text-sm text-text-secondary line-clamp-2">{item.summary}</p>
+                    </div>
+                  </div>
+                </article>
+              ))}
+            </div>
+          </div>
+
+          {selectedItem && (
+            <div className="modal-backdrop" onClick={() => setSelectedItem(null)}>
+              <div 
+                className="bg-dark-light border border-dark-border rounded-3xl max-w-3xl w-full mx-4 max-h-[85vh] overflow-y-auto"
+                onClick={e => e.stopPropagation()}
+              >
+                <div className="sticky top-0 bg-dark-light/90 backdrop-blur-xl border-b border-dark-border p-6 flex items-center justify-between rounded-t-3xl">
+                  <div className="flex items-center gap-3">
+                    {selectedItem.featured && (
+                      <span className="bg-accent text-dark text-xs px-3 py-1 rounded-full font-semibold flex items-center gap-1">
+                        <Icons.Star /> 推荐
+                      </span>
+                    )}
+                    <span className="text-xs text-text-muted">{formatDate(selectedItem.date)}</span>
+                  </div>
+                  <button onClick={() => setSelectedItem(null)} className="text-text-muted hover:text-text-primary p-2 hover:bg-dark-border rounded-lg transition-colors">
+                    <Icons.X />
+                  </button>
+                </div>
+                <div className="p-8">
+                  <h2 className="text-2xl font-display font-bold mb-4">{selectedItem.title}</h2>
+                  <div className="flex flex-wrap gap-2 mb-6">
+                    {(selectedItem.tags || []).map((tag, i) => (
+                      <span key={i} className="tag">{tag}</span>
+                    ))}
+                  </div>
+                  <div 
+                    className="prose-custom text-text-secondary leading-relaxed"
+                    dangerouslySetInnerHTML={{ __html: parseMarkdown(selectedItem.content) }}
+                  />
+                </div>
+              </div>
+            </div>
+          )}
+        </section>
+      );
+    };
+
+    const JournalSection = () => {
+      const { data } = useApp();
+      const sectionRef = useReveal();
+
+      if (!data.journals?.length) return null;
+
+      const sortedJournal = [...data.journals].sort((a, b) => {
+        if (a.pinned && !b.pinned) return -1;
+        if (!a.pinned && b.pinned) return 1;
+        return new Date(b.date) - new Date(a.date);
+      });
+
+      return (
+        <section id="journal" ref={sectionRef} className="reveal py-32 px-6 bg-dark-light/50">
+          <div className="max-w-content mx-auto">
+            <div className="flex items-center gap-4 mb-4">
+              <span className="text-accent font-mono text-sm">04</span>
+              <h2 className="font-display text-3xl md:text-4xl font-bold">随笔</h2>
+            </div>
+            <p className="text-text-secondary mb-12">日常思考与记录</p>
+
+            <div className="max-w-2xl mx-auto space-y-8">
+              {sortedJournal.map((entry, index) => (
+                <article 
+                  key={entry.id}
+                  className="relative pl-10 pb-8 border-l-2 border-dark-border last:border-0"
+                >
+                  <div className={`absolute left-0 top-0 w-4 h-4 -translate-x-[9px] rounded-full border-2 ${entry.pinned ? 'bg-accent border-accent' : 'bg-dark-light border-dark-border'}`}></div>
+                  
+                  <div className="space-y-4">
+                    <div className="flex items-center gap-4 text-sm text-text-muted">
+                      <span className="flex items-center gap-2">
+                        <Icons.Calendar />
+                        {formatDate(entry.date)}
+                      </span>
+                      {entry.pinned && (
+                        <span className="text-accent flex items-center gap-1">
+                          <Icons.Pin /> 置顶
+                        </span>
+                      )}
+                    </div>
+                    
+                    <div 
+                      className="text-text-secondary leading-relaxed whitespace-pre-wrap"
+                      dangerouslySetInnerHTML={{ __html: parseMarkdown(entry.content) }}
+                    />
+                    
+                    {(entry.images || []).length > 0 && (
+                      <div className="grid grid-cols-3 gap-3 mt-4">
+                        {entry.images.map((img, i) => (
+                          <img key={i} src={img} alt="" className="rounded-2xl w-full aspect-square object-cover" />
+                        ))}
+                      </div>
+                    )}
+                    
+                    {(entry.tags || []).length > 0 && (
+                      <div className="flex flex-wrap gap-2 mt-4">
+                        {(entry.tags || []).map((tag, i) => (
+                          <span key={i} className="tag-muted">{tag}</span>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </article>
+              ))}
+            </div>
+          </div>
+        </section>
+      );
+    };
+
+    const InsightsSection = () => {
+      const { data } = useApp();
+      const [selectedInsight, setSelectedInsight] = useState(null);
+      const sectionRef = useReveal();
+
+      if (!data.insights?.length) return null;
+
+      return (
+        <section id="insights" ref={sectionRef} className="reveal py-32 px-6">
+          <div className="max-w-content mx-auto">
+            <div className="flex items-center gap-4 mb-4">
+              <span className="text-accent font-mono text-sm">05</span>
+              <h2 className="font-display text-3xl md:text-4xl font-bold">观点</h2>
+            </div>
+            <p className="text-text-secondary mb-12">面试素材与行业思考</p>
+
+            <div className="grid md:grid-cols-2 gap-6">
+              {data.insights.map((insight, index) => (
+                <article
+                  key={insight.id}
+                  className="p-8 rounded-3xl bg-dark-light border border-dark-border card-hover cursor-pointer"
+                  onClick={() => setSelectedInsight(insight)}
+                >
+                  <div className="flex items-center gap-2 mb-4">
+                    <Icons.BookOpen />
+                    <span className="text-xs text-text-muted">{formatDate(insight.date)}</span>
+                  </div>
+                  <h3 className="text-xl font-semibold mb-4">{insight.title}</h3>
+                  <div className="flex flex-wrap gap-2 mb-4">
+                    {(insight.tags || []).map((tag, i) => (
+                      <span key={i} className="tag">{tag}</span>
+                    ))}
+                  </div>
+                  <div 
+                    className="text-sm text-text-secondary line-clamp-3 prose-custom"
+                    dangerouslySetInnerHTML={{ __html: parseMarkdown(insight.content) }}
+                  />
+                </article>
+              ))}
+            </div>
+          </div>
+
+          {selectedInsight && (
+            <div className="modal-backdrop" onClick={() => setSelectedInsight(null)}>
+              <div 
+                className="bg-dark-light border border-dark-border rounded-3xl max-w-3xl w-full mx-4 max-h-[85vh] overflow-y-auto"
+                onClick={e => e.stopPropagation()}
+              >
+                <div className="sticky top-0 bg-dark-light/90 backdrop-blur-xl border-b border-dark-border p-6 flex items-center justify-between rounded-t-3xl">
+                  <span className="text-xs text-text-muted">{formatDate(selectedInsight.date)}</span>
+                  <button onClick={() => setSelectedInsight(null)} className="text-text-muted hover:text-text-primary p-2 hover:bg-dark-border rounded-lg transition-colors">
+                    <Icons.X />
+                  </button>
+                </div>
+                <div className="p-8">
+                  <h2 className="text-2xl font-display font-bold mb-4">{selectedInsight.title}</h2>
+                  <div className="flex flex-wrap gap-2 mb-6">
+                    {(selectedInsight.tags || []).map((tag, i) => (
+                      <span key={i} className="tag">{tag}</span>
+                    ))}
+                  </div>
+                  <div 
+                    className="prose-custom text-text-secondary leading-relaxed"
+                    dangerouslySetInnerHTML={{ __html: parseMarkdown(selectedInsight.content) }}
+                  />
+                </div>
+              </div>
+            </div>
+          )}
+        </section>
+      );
+    };
+
+    const ContactSection = () => {
+      const { data } = useApp();
+      const [formData, setFormData] = useState({ name: '', email: '', message: '' });
+      const [submitted, setSubmitted] = useState(false);
+      const sectionRef = useReveal();
+
+      const handleSubmit = (e) => {
+        e.preventDefault();
+        setSubmitted(true);
+        setTimeout(() => setSubmitted(false), 3000);
+        setFormData({ name: '', email: '', message: '' });
+      };
+
+      if (!data.profile) return null;
+
+      return (
+        <section id="contact" ref={sectionRef} className="reveal py-32 px-6 bg-dark-light/50">
+          <div className="max-w-content mx-auto">
+            <div className="flex items-center gap-4 mb-4">
+              <span className="text-accent font-mono text-sm">06</span>
+              <h2 className="font-display text-3xl md:text-4xl font-bold">联系我</h2>
+            </div>
+            <p className="text-text-secondary mb-12">有合作机会或问题，欢迎留言</p>
+
+            <div className="max-w-xl mx-auto">
+              {submitted ? (
+                <div className="text-center py-16">
+                  <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-accent-muted flex items-center justify-center">
+                    <Icons.Check />
+                  </div>
+                  <p className="text-2xl font-semibold mb-2">消息已发送</p>
+                  <p className="text-text-secondary">我会尽快回复你</p>
+                </div>
+              ) : (
+                <form onSubmit={handleSubmit} className="space-y-6">
+                  <div className="grid md:grid-cols-2 gap-6">
+                    <div>
+                      <label className="block text-sm text-text-muted mb-3">姓名</label>
+                      <input
+                        type="text"
+                        required
+                        value={formData.name}
+                        onChange={e => setFormData({ ...formData, name: e.target.value })}
+                        className="w-full px-5 py-4 rounded-2xl"
+                        placeholder="你的名字"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm text-text-muted mb-3">邮箱</label>
+                      <input
+                        type="email"
+                        required
+                        value={formData.email}
+                        onChange={e => setFormData({ ...formData, email: e.target.value })}
+                        className="w-full px-5 py-4 rounded-2xl"
+                        placeholder="your@email.com"
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-sm text-text-muted mb-3">留言</label>
+                    <textarea
+                      required
+                      rows={5}
+                      value={formData.message}
+                      onChange={e => setFormData({ ...formData, message: e.target.value })}
+                      className="w-full px-5 py-4 rounded-2xl resize-none"
+                      placeholder="想说点什么..."
+                    />
+                  </div>
+                  <button type="submit" className="btn-primary w-full py-4 rounded-2xl flex items-center justify-center gap-3 text-lg">
+                    <Icons.Send />
+                    发送消息
+                  </button>
+                </form>
+              )}
+
+              <div className="mt-16 pt-12 border-t border-dark-border text-center">
+                <p className="text-text-muted mb-6">或者通过以下方式联系我</p>
+                <div className="flex items-center justify-center gap-6">
+                  {(data.profile.socials || []).map((social, i) => (
+                    <a
+                      key={i}
+                      href={social.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-text-muted hover:text-accent transition-all p-4 rounded-2xl hover:bg-accent-muted"
+                    >
+                      {social.icon === 'Github' && <Icons.Github />}
+                      {social.icon === 'Linkedin' && <Icons.Linkedin />}
+                      {social.icon === 'Mail' && <Icons.Mail />}
+                    </a>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+      );
+    };
+
+    const Footer = () => (
+      <footer className="py-12 px-6 border-t border-dark-border">
+        <div className="max-w-content mx-auto text-center">
+          <p className="text-text-muted">© {new Date().getFullYear()} 陈樊 · AI产品经理</p>
+          <p className="text-sm text-text-muted/60 mt-2">用产品思维解构复杂系统</p>
+        </div>
+      </footer>
+    );
+
+    const HomePage = () => {
+      const { data, loading } = useApp();
+      const { modules } = data.config || { modules: { about: true, experience: true, portfolio: true, journal: true, insights: true, contact: true } };
+
+      if (loading) return <LoadingSkeleton />;
+
+      return (
+        <>
+          <Navigation />
+          <HeroSection />
+          {modules.about !== false && <AboutSection />}
+          {modules.experience !== false && <ExperienceSection />}
+          {modules.portfolio !== false && <PortfolioSection />}
+          {modules.journal !== false && <JournalSection />}
+          {modules.insights !== false && <InsightsSection />}
+          {modules.contact !== false && <ContactSection />}
+          <Footer />
+        </>
+      );
+    };
+
+    // ==================== 后台管理组件 ====================
+    const AdminNav = () => {
+      const { user, logout } = useApp();
+      
+      return (
+        <nav className="fixed top-0 left-0 right-0 z-50 glass">
+          <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <a href="/" className="text-text-muted hover:text-accent transition-colors">
+                <Icons.ArrowLeft />
+              </a>
+              <span className="font-semibold">管理后台</span>
+            </div>
+            <div className="flex items-center gap-4">
+              <span className="text-sm text-text-muted">{user?.email}</span>
+              <button onClick={logout} className="text-text-muted hover:text-accent transition-colors" title="退出登录">
+                <Icons.LogOut />
+              </button>
+            </div>
+          </div>
+        </nav>
+      );
+    };
+
+    const LoginPage = () => {
+      const { login } = useApp();
+      const [email, setEmail] = useState('');
+      const [password, setPassword] = useState('');
+      const [error, setError] = useState('');
+      const [loading, setLoading] = useState(false);
+
+      const handleSubmit = async (e) => {
+        e.preventDefault();
+        setError('');
+        setLoading(true);
+        try {
+          await login(email, password);
+        } catch (err) {
+          setError(err.message || '登录失败');
+        }
+        setLoading(false);
+      };
+
+      return (
+        <div className="min-h-screen flex items-center justify-center px-6">
+          <div className="w-full max-w-md">
+            <div className="text-center mb-10">
+              <h1 className="text-3xl font-bold mb-2">管理后台</h1>
+              <p className="text-text-secondary">登录以编辑网站内容</p>
+            </div>
+            
+            <form onSubmit={handleSubmit} className="space-y-6">
+              {error && (
+                <div className="p-4 rounded-2xl bg-red-500/10 border border-red-500/20 text-red-400 text-sm">
+                  {error}
+                </div>
+              )}
+              
+              <div>
+                <label className="block text-sm text-text-muted mb-3">邮箱</label>
+                <input
+                  type="email"
+                  value={email}
+                  onChange={e => setEmail(e.target.value)}
+                  className="w-full px-5 py-4 rounded-2xl"
+                  placeholder="admin@example.com"
+                  required
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm text-text-muted mb-3">密码</label>
+                <input
+                  type="password"
+                  value={password}
+                  onChange={e => setPassword(e.target.value)}
+                  className="w-full px-5 py-4 rounded-2xl"
+                  placeholder="••••••••"
+                  required
+                />
+              </div>
+              
+              <button type="submit" disabled={loading} className="btn-primary w-full py-4 rounded-2xl flex items-center justify-center gap-3">
+                {loading ? <Icons.Loader /> : null}
+                {loading ? '登录中...' : '登录'}
+              </button>
+            </form>
+            
+            <div className="mt-8 p-6 rounded-2xl bg-dark-light border border-dark-border">
+              <p className="text-sm text-text-muted mb-2">默认管理员账号：</p>
+              <p className="text-sm">admin@personalbrand.com</p>
+              <p className="text-sm text-text-secondary">Admin@2026!</p>
+            </div>
+          </div>
+        </div>
+      );
+    };
+
+    const TabButton = ({ active, onClick, icon: Icon, label }) => (
+      <button
+        onClick={onClick}
+        className={`flex items-center gap-2 px-4 py-2 rounded-xl transition-all ${
+          active ? 'bg-accent text-dark font-semibold' : 'text-text-secondary hover:text-text-primary hover:bg-dark-light'
+        }`}
+      >
+        <Icon />
+        <span>{label}</span>
+      </button>
+    );
+
+    const ImageUploader = ({ value, onChange }) => {
+      const inputRef = useRef(null);
+      
+      const handleFileChange = async (e) => {
+        const file = e.target.files[0];
+        if (file) {
+          // 压缩图片
+          const reader = new FileReader();
+          reader.onload = async (ev) => {
+            const img = new Image();
+            img.onload = () => {
+              const canvas = document.createElement('canvas');
+              const maxSize = 400;
+              let { width, height } = img;
+              if (width > height && width > maxSize) {
+                height = (height * maxSize) / width;
+                width = maxSize;
+              } else if (height > maxSize) {
+                width = (width * maxSize) / height;
+                height = maxSize;
+              }
+              canvas.width = width;
+              canvas.height = height;
+              const ctx = canvas.getContext('2d');
+              ctx.drawImage(img, 0, 0, width, height);
+              const base64 = canvas.toDataURL('image/jpeg', 0.7);
+              onChange(base64);
+            };
+            img.src = ev.target.result;
+          };
+          reader.readAsDataURL(file);
+        }
+      };
+
+      return (
+        <div>
+          <input ref={inputRef} type="file" accept="image/*" onChange={handleFileChange} className="hidden" />
+          {value ? (
+            <div className="relative group">
+              <img src={value} alt="" className="w-full h-32 object-cover rounded-2xl" />
+              <button
+                onClick={() => onChange('')}
+                className="absolute top-2 right-2 p-2 bg-dark/80 rounded-full text-text-muted hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity"
+              >
+                <Icons.X />
+              </button>
+            </div>
+          ) : (
+            <button
+              onClick={() => inputRef.current?.click()}
+              className="w-full h-32 border-2 border-dashed border-dark-border rounded-2xl flex flex-col items-center justify-center text-text-muted hover:border-accent hover:text-accent transition-colors"
+            >
+              <Icons.Upload />
+              <span className="text-sm mt-2">上传图片</span>
+            </button>
+          )}
+        </div>
+      );
+    };
+
+    const TagInput = ({ tags, onChange, suggestions = [] }) => {
+      const [input, setInput] = useState('');
+
+      const addTag = (tag) => {
+        if (tag && !tags.includes(tag)) {
+          onChange([...tags, tag]);
+        }
+        setInput('');
+      };
+
+      const removeTag = (tag) => {
+        onChange(tags.filter(t => t !== tag));
+      };
+
+      const filteredSuggestions = suggestions.filter(s => 
+        s.toLowerCase().includes(input.toLowerCase()) && !tags.includes(s)
+      ).slice(0, 5);
+
+      return (
+        <div>
+          <div className="flex flex-wrap gap-2 mb-3">
+            {tags.map((tag, i) => (
+              <span key={i} className="tag flex items-center gap-2">
+                {tag}
+                <button onClick={() => removeTag(tag)} className="hover:text-red-400">
+                  <Icons.X />
+                </button>
+              </span>
+            ))}
+          </div>
+          <div className="relative">
+            <input
+              type="text"
+              value={input}
+              onChange={e => setInput(e.target.value)}
+              onKeyDown={e => {
+                if (e.key === 'Enter') {
+                  e.preventDefault();
+                  addTag(input);
+                }
+              }}
+              className="w-full px-4 py-3 rounded-xl"
+              placeholder="输入标签后按回车"
+            />
+            {filteredSuggestions.length > 0 && input && (
+              <div className="absolute top-full left-0 right-0 mt-2 bg-dark-light border border-dark-border rounded-xl shadow-elevated z-10 overflow-hidden">
+                {filteredSuggestions.map((s, i) => (
+                  <button
+                    key={i}
+                    onClick={() => addTag(s)}
+                    className="w-full text-left px-4 py-2 text-sm hover:bg-dark-border transition-colors"
+                  >
+                    {s}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      );
+    };
+
+    // 作品管理
+    const AdminPortfolio = () => {
+      const { data, addDocument, updateDocument, deleteDocument } = useApp();
+      const [showForm, setShowForm] = useState(false);
+      const [editing, setEditing] = useState(null);
+      const [form, setForm] = useState({ title: '', category: 'project', tags: [], cover: '', summary: '', content: '', featured: false, date: '' });
+
+      const handleSave = async () => {
+        if (editing) {
+          await updateDocument('portfolios', editing, form);
+        } else {
+          await addDocument('portfolios', { ...form, date: form.date || new Date().toISOString().split('T')[0] });
+        }
+        setShowForm(false);
+        setEditing(null);
+        setForm({ title: '', category: 'project', tags: [], cover: '', summary: '', content: '', featured: false, date: '' });
+      };
+
+      const handleEdit = (item) => {
+        setForm(item);
+        setEditing(item.id);
+        setShowForm(true);
+      };
+
+      const handleDelete = async (id) => {
+        if (confirm('确定要删除这个作品吗？')) {
+          await deleteDocument('portfolios', id);
+        }
+      };
+
+      const toggleFeatured = async (item) => {
+        await updateDocument('portfolios', item.id, { featured: !item.featured });
+      };
+
+      const categoryLabels = { project: '项目', article: '文章', analysis: '分析报告', case: '案例' };
+
+      return (
+        <div className="pt-24 px-6 pb-12">
+          <div className="max-w-6xl mx-auto">
+            <div className="flex items-center justify-between mb-8">
+              <h2 className="text-2xl font-bold">作品管理</h2>
+              <button 
+                onClick={() => { setShowForm(true); setEditing(null); setForm({ title: '', category: 'project', tags: [], cover: '', summary: '', content: '', featured: false, date: new Date().toISOString().split('T')[0] }); }}
+                className="btn-primary px-5 py-3 rounded-xl flex items-center gap-2"
+              >
+                <Icons.Plus /> 新增作品
+              </button>
+            </div>
+
+            {showForm && (
+              <div className="modal-backdrop">
+                <div className="bg-dark-light border border-dark-border rounded-3xl max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+                  <div className="p-6 border-b border-dark-border">
+                    <h3 className="text-lg font-bold">{editing ? '编辑作品' : '新增作品'}</h3>
+                  </div>
+                  <div className="p-6 space-y-6">
+                    <div>
+                      <label className="block text-sm text-text-muted mb-2">标题</label>
+                      <input type="text" value={form.title} onChange={e => setForm({...form, title: e.target.value})} className="w-full px-4 py-3 rounded-xl" />
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm text-text-muted mb-2">分类</label>
+                        <select value={form.category} onChange={e => setForm({...form, category: e.target.value})} className="w-full px-4 py-3 rounded-xl">
+                          <option value="project">项目</option>
+                          <option value="article">文章</option>
+                          <option value="analysis">分析报告</option>
+                          <option value="case">案例</option>
+                        </select>
+                      </div>
+                      <div>
+                        <label className="block text-sm text-text-muted mb-2">日期</label>
+                        <input type="date" value={form.date} onChange={e => setForm({...form, date: e.target.value})} className="w-full px-4 py-3 rounded-xl" />
+                      </div>
+                    </div>
+                    <div>
+                      <label className="block text-sm text-text-muted mb-2">封面图</label>
+                      <ImageUploader value={form.cover} onChange={cover => setForm({...form, cover})} />
+                    </div>
+                    <div>
+                      <label className="block text-sm text-text-muted mb-2">标签</label>
+                      <TagInput tags={form.tags} onChange={tags => setForm({...form, tags})} />
+                    </div>
+                    <div>
+                      <label className="block text-sm text-text-muted mb-2">摘要</label>
+                      <textarea value={form.summary} onChange={e => setForm({...form, summary: e.target.value})} className="w-full px-4 py-3 rounded-xl" rows={3} />
+                    </div>
+                    <div>
+                      <label className="block text-sm text-text-muted mb-2">正文（支持Markdown）</label>
+                      <textarea value={form.content} onChange={e => setForm({...form, content: e.target.value})} className="w-full px-4 py-3 rounded-xl font-mono text-sm" rows={10} />
+                    </div>
+                    <label className="flex items-center gap-3 cursor-pointer">
+                      <input type="checkbox" checked={form.featured} onChange={e => setForm({...form, featured: e.target.checked})} className="w-5 h-5 rounded accent-accent" />
+                      <span>置顶推荐</span>
+                    </label>
+                  </div>
+                  <div className="p-6 border-t border-dark-border flex justify-end gap-4">
+                    <button onClick={() => setShowForm(false)} className="btn-secondary px-5 py-3 rounded-xl">取消</button>
+                    <button onClick={handleSave} className="btn-primary px-5 py-3 rounded-xl">保存</button>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            <div className="space-y-4">
+              {(data.portfolios || []).map(item => (
+                <div key={item.id} className="p-5 rounded-2xl bg-dark-light border border-dark-border flex items-center gap-5">
+                  <div className="w-16 h-16 rounded-xl bg-accent/10 flex items-center justify-center text-2xl flex-shrink-0">
+                    {item.category === 'project' && '📦'}
+                    {item.category === 'article' && '📝'}
+                    {item.category === 'analysis' && '📊'}
+                    {item.category === 'case' && '💡'}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2">
+                      <h3 className="font-semibold truncate">{item.title}</h3>
+                      {item.featured && <span className="text-accent"><Icons.Star /></span>}
+                    </div>
+                    <p className="text-sm text-text-muted truncate">{item.summary}</p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <button onClick={() => toggleFeatured(item)} className={`p-2 rounded-lg transition-colors ${item.featured ? 'text-accent' : 'text-text-muted hover:text-accent'}`}>
+                      <Icons.Star />
+                    </button>
+                    <button onClick={() => handleEdit(item)} className="p-2 text-text-muted hover:text-accent transition-colors">
+                      <Icons.Edit />
+                    </button>
+                    <button onClick={() => handleDelete(item.id)} className="p-2 text-text-muted hover:text-red-500 transition-colors">
+                      <Icons.Trash />
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      );
+    };
+
+    // 随笔管理
+    const AdminJournal = () => {
+      const { data, addDocument, updateDocument, deleteDocument } = useApp();
+      const [showForm, setShowForm] = useState(false);
+      const [editing, setEditing] = useState(null);
+      const [form, setForm] = useState({ content: '', tags: [], images: [], pinned: false, date: '' });
+
+      const handleSave = async () => {
+        if (editing) {
+          await updateDocument('journals', editing, form);
+        } else {
+          await addDocument('journals', { ...form, date: form.date || new Date().toISOString().split('T')[0] });
+        }
+        setShowForm(false);
+        setEditing(null);
+        setForm({ content: '', tags: [], images: [], pinned: false, date: '' });
+      };
+
+      const handleEdit = (item) => {
+        setForm(item);
+        setEditing(item.id);
+        setShowForm(true);
+      };
+
+      const handleDelete = async (id) => {
+        if (confirm('确定要删除这篇随笔吗？')) {
+          await deleteDocument('journals', id);
+        }
+      };
+
+      const togglePin = async (item) => {
+        await updateDocument('journals', item.id, { pinned: !item.pinned });
+      };
+
+      const handleImageUpload = (e) => {
+        const file = e.target.files[0];
+        if (file) {
+          const reader = new FileReader();
+          reader.onload = (ev) => setForm({ ...form, images: [...form.images, ev.target.result] });
+          reader.readAsDataURL(file);
+        }
+      };
+
+      return (
+        <div className="pt-24 px-6 pb-12">
+          <div className="max-w-6xl mx-auto">
+            <div className="flex items-center justify-between mb-8">
+              <h2 className="text-2xl font-bold">随笔管理</h2>
+              <button 
+                onClick={() => { setShowForm(true); setEditing(null); setForm({ content: '', tags: [], images: [], pinned: false, date: new Date().toISOString().split('T')[0] }); }}
+                className="btn-primary px-5 py-3 rounded-xl flex items-center gap-2"
+              >
+                <Icons.Plus /> 新增随笔
+              </button>
+            </div>
+
+            {showForm && (
+              <div className="modal-backdrop">
+                <div className="bg-dark-light border border-dark-border rounded-3xl max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+                  <div className="p-6 border-b border-dark-border">
+                    <h3 className="text-lg font-bold">{editing ? '编辑随笔' : '新增随笔'}</h3>
+                  </div>
+                  <div className="p-6 space-y-6">
+                    <div>
+                      <label className="block text-sm text-text-muted mb-2">日期</label>
+                      <input type="date" value={form.date} onChange={e => setForm({...form, date: e.target.value})} className="w-full px-4 py-3 rounded-xl" />
+                    </div>
+                    <div>
+                      <label className="block text-sm text-text-muted mb-2">内容（支持Markdown）</label>
+                      <textarea value={form.content} onChange={e => setForm({...form, content: e.target.value})} className="w-full px-4 py-3 rounded-xl" rows={8} placeholder="写下你的随笔..." />
+                    </div>
+                    <div>
+                      <label className="block text-sm text-text-muted mb-2">标签</label>
+                      <TagInput tags={form.tags} onChange={tags => setForm({...form, tags})} />
+                    </div>
+                    <div>
+                      <label className="block text-sm text-text-muted mb-2">图片</label>
+                      <div className="space-y-3">
+                        {form.images.length > 0 && (
+                          <div className="grid grid-cols-4 gap-2">
+                            {form.images.map((img, i) => (
+                              <div key={i} className="relative group">
+                                <img src={img} alt="" className="w-full h-20 object-cover rounded-xl" />
+                                <button onClick={() => setForm({...form, images: form.images.filter((_, idx) => idx !== i)})} className="absolute -top-2 -right-2 p-1 bg-red-500 rounded-full text-white opacity-0 group-hover:opacity-100 transition-opacity">
+                                  <Icons.X />
+                                </button>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                        <label className="block px-4 py-4 border-2 border-dashed border-dark-border rounded-xl text-center text-text-muted cursor-pointer hover:border-accent hover:text-accent transition-colors">
+                          <Icons.Image />
+                          <span className="block text-sm mt-1">添加图片</span>
+                          <input type="file" accept="image/*" onChange={handleImageUpload} className="hidden" />
+                        </label>
+                      </div>
+                    </div>
+                    <label className="flex items-center gap-3 cursor-pointer">
+                      <input type="checkbox" checked={form.pinned} onChange={e => setForm({...form, pinned: e.target.checked})} className="w-5 h-5 rounded accent-accent" />
+                      <span>置顶</span>
+                    </label>
+                  </div>
+                  <div className="p-6 border-t border-dark-border flex justify-end gap-4">
+                    <button onClick={() => setShowForm(false)} className="btn-secondary px-5 py-3 rounded-xl">取消</button>
+                    <button onClick={handleSave} className="btn-primary px-5 py-3 rounded-xl">保存</button>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            <div className="space-y-4">
+              {(data.journals || []).map(item => (
+                <div key={item.id} className="p-5 rounded-2xl bg-dark-light border border-dark-border">
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-4 text-sm text-text-muted mb-3">
+                        <span className="flex items-center gap-2">
+                          <Icons.Calendar />
+                          {formatDate(item.date)}
+                        </span>
+                        {item.pinned && <span className="text-accent flex items-center gap-1"><Icons.Pin /> 置顶</span>}
+                      </div>
+                      <p className="text-text-secondary line-clamp-3">{item.content}</p>
+                      {(item.tags || []).length > 0 && (
+                        <div className="flex flex-wrap gap-2 mt-3">
+                          {item.tags.map((tag, i) => (
+                            <span key={i} className="tag-muted text-xs">{tag}</span>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-2 flex-shrink-0">
+                      <button onClick={() => togglePin(item)} className={`p-2 rounded-lg transition-colors ${item.pinned ? 'text-accent' : 'text-text-muted hover:text-accent'}`}>
+                        <Icons.Pin />
+                      </button>
+                      <button onClick={() => handleEdit(item)} className="p-2 text-text-muted hover:text-accent transition-colors">
+                        <Icons.Edit />
+                      </button>
+                      <button onClick={() => handleDelete(item.id)} className="p-2 text-text-muted hover:text-red-500 transition-colors">
+                        <Icons.Trash />
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      );
+    };
+
+    // 经历管理
+    const AdminExperience = () => {
+      const { data, addDocument, updateDocument, deleteDocument } = useApp();
+      const [showForm, setShowForm] = useState(false);
+      const [editing, setEditing] = useState(null);
+      const [form, setForm] = useState({ company: '', role: '', period: '', achievements: [], description: '' });
+      const [newAchievement, setNewAchievement] = useState('');
+
+      const handleSave = async () => {
+        if (editing) {
+          await updateDocument('experiences', editing, form);
+        } else {
+          await addDocument('experiences', form);
+        }
+        setShowForm(false);
+        setEditing(null);
+        setForm({ company: '', role: '', period: '', achievements: [], description: '' });
+      };
+
+      const handleEdit = (item) => {
+        setForm(item);
+        setEditing(item.id);
+        setShowForm(true);
+      };
+
+      const handleDelete = async (id) => {
+        if (confirm('确定要删除这段经历吗？')) {
+          await deleteDocument('experiences', id);
+        }
+      };
+
+      const addAchievement = () => {
+        if (newAchievement) {
+          setForm({ ...form, achievements: [...form.achievements, newAchievement] });
+          setNewAchievement('');
+        }
+      };
+
+      return (
+        <div className="pt-24 px-6 pb-12">
+          <div className="max-w-6xl mx-auto">
+            <div className="flex items-center justify-between mb-8">
+              <h2 className="text-2xl font-bold">经历管理</h2>
+              <button 
+                onClick={() => { setShowForm(true); setEditing(null); setForm({ company: '', role: '', period: '', achievements: [], description: '' }); }}
+                className="btn-primary px-5 py-3 rounded-xl flex items-center gap-2"
+              >
+                <Icons.Plus /> 新增经历
+              </button>
+            </div>
+
+            {showForm && (
+              <div className="modal-backdrop">
+                <div className="bg-dark-light border border-dark-border rounded-3xl max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+                  <div className="p-6 border-b border-dark-border">
+                    <h3 className="text-lg font-bold">{editing ? '编辑经历' : '新增经历'}</h3>
+                  </div>
+                  <div className="p-6 space-y-6">
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm text-text-muted mb-2">公司</label>
+                        <input type="text" value={form.company} onChange={e => setForm({...form, company: e.target.value})} className="w-full px-4 py-3 rounded-xl" />
+                      </div>
+                      <div>
+                        <label className="block text-sm text-text-muted mb-2">职位</label>
+                        <input type="text" value={form.role} onChange={e => setForm({...form, role: e.target.value})} className="w-full px-4 py-3 rounded-xl" />
+                      </div>
+                    </div>
+                    <div>
+                      <label className="block text-sm text-text-muted mb-2">时间</label>
+                      <input type="text" value={form.period} onChange={e => setForm({...form, period: e.target.value})} className="w-full px-4 py-3 rounded-xl" placeholder="2022 - 2024" />
+                    </div>
+                    <div>
+                      <label className="block text-sm text-text-muted mb-2">描述</label>
+                      <textarea value={form.description} onChange={e => setForm({...form, description: e.target.value})} className="w-full px-4 py-3 rounded-xl" rows={3} />
+                    </div>
+                    <div>
+                      <label className="block text-sm text-text-muted mb-2">关键成果</label>
+                      <div className="flex gap-2 mb-3">
+                        <input type="text" value={newAchievement} onChange={e => setNewAchievement(e.target.value)} onKeyDown={e => e.key === 'Enter' && (e.preventDefault(), addAchievement())} className="flex-1 px-4 py-3 rounded-xl" placeholder="输入后按回车添加" />
+                        <button onClick={addAchievement} className="btn-secondary px-4 py-3 rounded-xl">添加</button>
+                      </div>
+                      <div className="space-y-2">
+                        {form.achievements.map((a, i) => (
+                          <div key={i} className="flex items-center justify-between p-3 bg-dark rounded-xl">
+                            <span className="text-sm">{a}</span>
+                            <button onClick={() => setForm({...form, achievements: form.achievements.filter((_, idx) => idx !== i)})} className="text-text-muted hover:text-red-500">
+                              <Icons.X />
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                  <div className="p-6 border-t border-dark-border flex justify-end gap-4">
+                    <button onClick={() => setShowForm(false)} className="btn-secondary px-5 py-3 rounded-xl">取消</button>
+                    <button onClick={handleSave} className="btn-primary px-5 py-3 rounded-xl">保存</button>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            <div className="space-y-4">
+              {(data.experiences || []).map(item => (
+                <div key={item.id} className="p-5 rounded-2xl bg-dark-light border border-dark-border flex items-center gap-5">
+                  <div className="w-12 h-12 rounded-xl bg-accent-muted flex items-center justify-center text-accent flex-shrink-0">
+                    <Icons.Briefcase />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2">
+                      <h3 className="font-semibold">{item.role}</h3>
+                      <span className="text-text-muted">·</span>
+                      <span className="text-sm text-accent">{item.company}</span>
+                    </div>
+                    <p className="text-sm text-text-muted">{item.period}</p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <button onClick={() => handleEdit(item)} className="p-2 text-text-muted hover:text-accent transition-colors">
+                      <Icons.Edit />
+                    </button>
+                    <button onClick={() => handleDelete(item.id)} className="p-2 text-text-muted hover:text-red-500 transition-colors">
+                      <Icons.Trash />
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      );
+    };
+
+    // 观点管理
+    const AdminInsights = () => {
+      const { data, addDocument, updateDocument, deleteDocument } = useApp();
+      const [showForm, setShowForm] = useState(false);
+      const [editing, setEditing] = useState(null);
+      const [form, setForm] = useState({ title: '', tags: [], content: '', date: '' });
+
+      const handleSave = async () => {
+        if (editing) {
+          await updateDocument('insights', editing, form);
+        } else {
+          await addDocument('insights', { ...form, date: form.date || new Date().toISOString().split('T')[0] });
+        }
+        setShowForm(false);
+        setEditing(null);
+        setForm({ title: '', tags: [], content: '', date: '' });
+      };
+
+      const handleEdit = (item) => {
+        setForm(item);
+        setEditing(item.id);
+        setShowForm(true);
+      };
+
+      const handleDelete = async (id) => {
+        if (confirm('确定要删除这篇观点吗？')) {
+          await deleteDocument('insights', id);
+        }
+      };
+
+      return (
+        <div className="pt-24 px-6 pb-12">
+          <div className="max-w-6xl mx-auto">
+            <div className="flex items-center justify-between mb-8">
+              <h2 className="text-2xl font-bold">观点管理</h2>
+              <button 
+                onClick={() => { setShowForm(true); setEditing(null); setForm({ title: '', tags: [], content: '', date: new Date().toISOString().split('T')[0] }); }}
+                className="btn-primary px-5 py-3 rounded-xl flex items-center gap-2"
+              >
+                <Icons.Plus /> 新增观点
+              </button>
+            </div>
+
+            {showForm && (
+              <div className="modal-backdrop">
+                <div className="bg-dark-light border border-dark-border rounded-3xl max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+                  <div className="p-6 border-b border-dark-border">
+                    <h3 className="text-lg font-bold">{editing ? '编辑观点' : '新增观点'}</h3>
+                  </div>
+                  <div className="p-6 space-y-6">
+                    <div>
+                      <label className="block text-sm text-text-muted mb-2">标题</label>
+                      <input type="text" value={form.title} onChange={e => setForm({...form, title: e.target.value})} className="w-full px-4 py-3 rounded-xl" />
+                    </div>
+                    <div>
+                      <label className="block text-sm text-text-muted mb-2">日期</label>
+                      <input type="date" value={form.date} onChange={e => setForm({...form, date: e.target.value})} className="w-full px-4 py-3 rounded-xl" />
+                    </div>
+                    <div>
+                      <label className="block text-sm text-text-muted mb-2">标签</label>
+                      <TagInput tags={form.tags} onChange={tags => setForm({...form, tags})} />
+                    </div>
+                    <div>
+                      <label className="block text-sm text-text-muted mb-2">内容（支持Markdown）</label>
+                      <textarea value={form.content} onChange={e => setForm({...form, content: e.target.value})} className="w-full px-4 py-3 rounded-xl font-mono text-sm" rows={12} />
+                    </div>
+                  </div>
+                  <div className="p-6 border-t border-dark-border flex justify-end gap-4">
+                    <button onClick={() => setShowForm(false)} className="btn-secondary px-5 py-3 rounded-xl">取消</button>
+                    <button onClick={handleSave} className="btn-primary px-5 py-3 rounded-xl">保存</button>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            <div className="space-y-4">
+              {(data.insights || []).map(item => (
+                <div key={item.id} className="p-5 rounded-2xl bg-dark-light border border-dark-border">
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="flex-1 min-w-0">
+                      <h3 className="font-semibold mb-2">{item.title}</h3>
+                      <div className="flex items-center gap-4 text-sm text-text-muted mb-3">
+                        <span className="flex items-center gap-2">
+                          <Icons.Calendar />
+                          {formatDate(item.date)}
+                        </span>
+                      </div>
+                      {(item.tags || []).length > 0 && (
+                        <div className="flex flex-wrap gap-2">
+                          {item.tags.map((tag, i) => (
+                            <span key={i} className="tag text-xs">{tag}</span>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-2 flex-shrink-0">
+                      <button onClick={() => handleEdit(item)} className="p-2 text-text-muted hover:text-accent transition-colors">
+                        <Icons.Edit />
+                      </button>
+                      <button onClick={() => handleDelete(item.id)} className="p-2 text-text-muted hover:text-red-500 transition-colors">
+                        <Icons.Trash />
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      );
+    };
+
+    // 个人资料
+    const AdminProfile = () => {
+      const { data, updateDocument } = useApp();
+      const [form, setForm] = useState({});
+      const [saved, setSaved] = useState(false);
+
+      useEffect(() => {
+        if (data.profile) {
+          setForm({ ...data.profile });
+        }
+      }, [data.profile]);
+
+      const handleSave = async () => {
+        await updateDocument('profile', 'main', {
+          name: form.name,
+          title: form.title,
+          tagline: form.tagline,
+          avatar: form.avatar,
+          bio: form.bio,
+          socials: form.socials
+        });
+        setSaved(true);
+        setTimeout(() => setSaved(false), 2000);
+      };
+
+      if (!data.profile) return null;
+
+      return (
+        <div className="pt-24 px-6 pb-12">
+          <div className="max-w-3xl mx-auto">
+            <h2 className="text-2xl font-bold mb-8">个人资料</h2>
+            
+            <div className="space-y-6">
+              <div className="grid grid-cols-2 gap-6">
+                <div>
+                  <label className="block text-sm text-text-muted mb-2">姓名</label>
+                  <input type="text" value={form.name || ''} onChange={e => setForm({...form, name: e.target.value})} className="w-full px-4 py-3 rounded-xl" />
+                </div>
+                <div>
+                  <label className="block text-sm text-text-muted mb-2">职位</label>
+                  <input type="text" value={form.title || ''} onChange={e => setForm({...form, title: e.target.value})} className="w-full px-4 py-3 rounded-xl" />
+                </div>
+              </div>
+              
+              <div>
+                <label className="block text-sm text-text-muted mb-2">头像（URL或Base64）</label>
+                <ImageUploader value={form.avatar || ''} onChange={avatar => setForm({...form, avatar})} />
+              </div>
+
+              <div>
+                <label className="block text-sm text-text-muted mb-2">现在（当前状态）</label>
+                <textarea value={form.bio?.now || ''} onChange={e => setForm({...form, bio: {...form.bio, now: e.target.value}})} className="w-full px-4 py-3 rounded-xl" rows={3} />
+              </div>
+
+              <div>
+                <label className="block text-sm text-text-muted mb-2">过去（经历背景）</label>
+                <textarea value={form.bio?.past || ''} onChange={e => setForm({...form, bio: {...form.bio, past: e.target.value}})} className="w-full px-4 py-3 rounded-xl" rows={3} />
+              </div>
+
+              <div>
+                <label className="block text-sm text-text-muted mb-2">未来方向</label>
+                <textarea value={form.bio?.future || ''} onChange={e => setForm({...form, bio: {...form.bio, future: e.target.value}})} className="w-full px-4 py-3 rounded-xl" rows={3} />
+              </div>
+
+              <div>
+                <label className="block text-sm text-text-muted mb-2">社交链接</label>
+                <div className="space-y-3">
+                  {(form.socials || []).map((s, i) => (
+                    <div key={i} className="flex gap-3">
+                      <select value={s.icon} onChange={e => { const newSocials = [...(form.socials || [])]; newSocials[i] = {...newSocials[i], icon: e.target.value}; setForm({...form, socials: newSocials}); }} className="px-4 py-3 rounded-xl w-36">
+                        <option value="Github">GitHub</option>
+                        <option value="Linkedin">LinkedIn</option>
+                        <option value="Mail">邮箱</option>
+                      </select>
+                      <input type="url" value={s.url || ''} onChange={e => { const newSocials = [...(form.socials || [])]; newSocials[i] = {...newSocials[i], url: e.target.value}; setForm({...form, socials: newSocials}); }} className="flex-1 px-4 py-3 rounded-xl" placeholder="https://..." />
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <button onClick={handleSave} className="btn-primary px-6 py-4 rounded-xl flex items-center gap-3">
+                {saved ? <Icons.Check /> : null}
+                {saved ? '已保存' : '保存修改'}
+              </button>
+            </div>
+          </div>
+        </div>
+      );
+    };
+
+    // 设置页
+    const AdminSettings = () => {
+      const { data, updateDocument, generateShareableHTML } = useApp();
+      const [showDeployGuide, setShowDeployGuide] = useState(false);
+
+      const handleModuleToggle = async (module) => {
+        const modules = { ...(data.config?.modules || {}), [module]: !(data.config?.modules || {})[module] };
+        await updateDocument('config', 'main', { modules });
+      };
+
+      const handleExportHTML = async () => {
+        const html = await generateShareableHTML();
+        const blob = new Blob([html], { type: 'text/html' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `${data.profile?.name || '个人品牌站'}-静态版.html`;
+        a.click();
+        URL.revokeObjectURL(url);
+      };
+
+      const handleExportPDF = () => {
+        window.print();
+      };
+
+      const handleHeroTextChange = async (text) => {
+        await updateDocument('config', 'main', { heroText: text });
+      };
+
+      const handleSkillsChange = async (skills) => {
+        await updateDocument('config', 'main', { skills });
+      };
+
+      return (
+        <div className="pt-24 px-6 pb-12">
+          <div className="max-w-3xl mx-auto">
+            <h2 className="text-2xl font-bold mb-8">个性化设置</h2>
+            
+            <div className="space-y-8">
+              {/* Hero文案 */}
+              <div className="p-6 rounded-2xl bg-dark-light border border-dark-border">
+                <h3 className="font-semibold mb-4">Hero文案</h3>
+                <input
+                  type="text"
+                  value={data.config?.heroText || ''}
+                  onChange={e => handleHeroTextChange(e.target.value)}
+                  className="w-full px-4 py-3 rounded-xl"
+                  placeholder="输入Hero区域的标语"
+                />
+              </div>
+
+              {/* 模块显示/隐藏 */}
+              <div className="p-6 rounded-2xl bg-dark-light border border-dark-border">
+                <h3 className="font-semibold mb-4">模块显示</h3>
+                <div className="grid grid-cols-2 gap-3">
+                  {Object.entries(data.config?.modules || {}).map(([key, value]) => (
+                    <label key={key} className="flex items-center gap-3 p-3 rounded-xl bg-dark cursor-pointer hover:bg-dark-border transition-colors">
+                      <input type="checkbox" checked={value} onChange={() => handleModuleToggle(key)} className="w-5 h-5 rounded accent-accent" />
+                      <span className="capitalize">{key === 'journal' ? '随笔' : key}</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+
+              {/* 技能标签 */}
+              <div className="p-6 rounded-2xl bg-dark-light border border-dark-border">
+                <h3 className="font-semibold mb-4">技能标签</h3>
+                <TagInput tags={data.skills || []} onChange={handleSkillsChange} />
+              </div>
+
+              {/* 导出功能 */}
+              <div className="pt-6 border-t border-dark-border">
+                <h3 className="font-semibold mb-6">发布与导出</h3>
+                <div className="space-y-4">
+                  <div className="p-6 rounded-2xl bg-dark-light border border-dark-border">
+                    <div className="flex items-start gap-4">
+                      <div className="text-accent mt-1">
+                        <Icons.Download />
+                      </div>
+                      <div className="flex-1">
+                        <h4 className="font-medium mb-2">生成静态HTML文件</h4>
+                        <p className="text-sm text-text-muted mb-4">将当前数据快照嵌入HTML，可部署到任何静态托管服务（生成的页面不会自动更新）</p>
+                        <button onClick={handleExportHTML} className="btn-primary px-5 py-3 rounded-xl flex items-center gap-2">
+                          <Icons.Download />
+                          下载HTML文件
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="p-6 rounded-2xl bg-dark-light border border-dark-border">
+                    <div className="flex items-start gap-4">
+                      <div className="text-accent mt-1">
+                        <Icons.FileText />
+                      </div>
+                      <div className="flex-1">
+                        <h4 className="font-medium mb-2">导出PDF简历</h4>
+                        <p className="text-sm text-text-muted mb-4">生成适合打印的PDF格式简历</p>
+                        <button onClick={handleExportPDF} className="btn-secondary px-5 py-3 rounded-xl flex items-center gap-2">
+                          <Icons.FileText />
+                          导出PDF
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+
+                  <button 
+                    onClick={() => setShowDeployGuide(!showDeployGuide)}
+                    className="w-full p-5 rounded-2xl bg-dark-light border border-dark-border text-left hover:border-accent transition-colors"
+                  >
+                    <div className="flex items-center justify-between">
+                      <span className="font-medium">部署指南</span>
+                      <span className={`text-text-muted transform transition-transform ${showDeployGuide ? 'rotate-180' : ''}`}>▼</span>
+                    </div>
+                  </button>
+
+                  {showDeployGuide && (
+                    <div className="p-8 rounded-2xl bg-dark border border-dark-border space-y-8">
+                      <div>
+                        <h4 className="font-medium mb-4 flex items-center gap-3">
+                          <span className="w-8 h-8 rounded-full bg-accent/20 text-accent flex items-center justify-center font-bold">1</span>
+                          Firebase 已配置 ✅
+                        </h4>
+                        <p className="text-sm text-text-muted ml-11">Firebase 项目已创建，Firestore 数据库已初始化</p>
+                      </div>
+                      
+                      <div>
+                        <h4 className="font-medium mb-4 flex items-center gap-3">
+                          <span className="w-8 h-8 rounded-full bg-accent/20 text-accent flex items-center justify-center font-bold">2</span>
+                          部署 HTML 到静态托管
+                        </h4>
+                        <ol className="text-sm text-text-secondary space-y-3 ml-11 list-decimal">
+                          <li><strong>Vercel（推荐）</strong>：访问 vercel.com，用 GitHub 登录，点击 "Add New" → 上传或连接仓库</li>
+                          <li><strong>Netlify</strong>：访问 netlify.com，直接把 HTML 文件拖到页面中间</li>
+                          <li><strong>GitHub Pages</strong>：创建仓库 settings → Pages → 选择 main branch</li>
+                        </ol>
+                      </div>
+
+                      <div>
+                        <h4 className="font-medium mb-4 flex items-center gap-3">
+                          <span className="w-8 h-8 rounded-full bg-accent/20 text-accent flex items-center justify-center font-bold">3</span>
+                          访问并登录
+                        </h4>
+                        <p className="text-sm text-text-muted ml-11">打开你的网站地址，点击右上角设置图标进入管理后台，使用以下账号登录：</p>
+                        <div className="mt-3 ml-11 p-4 rounded-xl bg-dark-light border border-dark-border">
+                          <p className="text-sm">admin@personalbrand.com</p>
+                          <p className="text-sm text-text-secondary">Admin@2026!</p>
+                        </div>
+                      </div>
+
+                      <div>
+                        <h4 className="font-medium mb-4 flex items-center gap-3">
+                          <span className="w-8 h-8 rounded-full bg-accent/20 text-accent flex items-center justify-center font-bold">4</span>
+                          开始编辑
+                        </h4>
+                        <p className="text-sm text-text-muted ml-11">登录后即可在后台管理所有内容，保存后前台会自动更新</p>
+                      </div>
+
+                      <div className="pt-4 border-t border-dark-border">
+                        <p className="text-xs text-text-muted">
+                          💡 提示：Firebase 的 Firestore 数据库是云端实时同步的，修改内容后所有访问该网站的用户都能看到更新。
+                        </p>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      );
+    };
+
+    const AdminPage = () => {
+      const { user, loading } = useApp();
+      const [activeTab, setActiveTab] = useState('portfolio');
+
+      if (loading) return <LoadingSkeleton />;
+      if (!user) return <LoginPage />;
+
+      const tabs = [
+        { id: 'portfolio', label: '作品集', icon: Icons.FileText },
+        { id: 'journal', label: '随笔', icon: Icons.BookOpen },
+        { id: 'experience', label: '经历', icon: Icons.Briefcase },
+        { id: 'insights', label: '观点', icon: Icons.Hash },
+        { id: 'profile', label: '个人资料', icon: Icons.Settings },
+        { id: 'settings', label: '设置', icon: Icons.Settings },
+      ];
+
+      return (
+        <div className="min-h-screen bg-dark">
+          <AdminNav />
+          
+          <div className="sticky top-[65px] z-40 bg-dark/90 backdrop-blur-xl border-b border-dark-border">
+            <div className="max-w-6xl mx-auto px-6 py-3 flex gap-2 overflow-x-auto">
+              {tabs.map(tab => (
+                <TabButton
+                  key={tab.id}
+                  active={activeTab === tab.id}
+                  onClick={() => setActiveTab(tab.id)}
+                  icon={tab.icon}
+                  label={tab.label}
+                />
+              ))}
+            </div>
+          </div>
+
+          {activeTab === 'portfolio' && <AdminPortfolio />}
+          {activeTab === 'journal' && <AdminJournal />}
+          {activeTab === 'experience' && <AdminExperience />}
+          {activeTab === 'insights' && <AdminInsights />}
+          {activeTab === 'profile' && <AdminProfile />}
+          {activeTab === 'settings' && <AdminSettings />}
+        </div>
+      );
+    };
+
+    // ==================== 主应用 ====================
+    const App = () => {
+      const isAdmin = window.location.pathname === '/admin';
+      return isAdmin ? <AdminPage /> : <HomePage />;
+    };
+
+    // 渲染
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(
+      <AppProvider>
+        <App />
+      </AppProvider>
+    );
+  </script>
+</body>
+</html>
